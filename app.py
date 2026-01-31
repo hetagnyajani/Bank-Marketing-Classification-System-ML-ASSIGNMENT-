@@ -30,37 +30,33 @@ if uploaded_file:
     )
 
     # -----------------------------
-    # Load preprocessor
+    # Run prediction inside a spinner
     # -----------------------------
-    preprocessor = joblib.load("model/preprocessor.pkl")
-    X_processed = preprocessor.transform(data)
+    with st.spinner(f"Loading {model_name} and making predictions..."):
+        # Load preprocessor
+        preprocessor = joblib.load("model/preprocessor.pkl")
+        X_processed = preprocessor.transform(data)
 
-    # Handle GaussianNB dense conversion
-    if model_name == "Naive_Bayes":
-        X_processed = X_processed.toarray() if hasattr(X_processed, "toarray") else X_processed
+        # Handle GaussianNB dense conversion
+        if model_name == "Naive_Bayes":
+            X_processed = X_processed.toarray() if hasattr(X_processed, "toarray") else X_processed
 
-    # -----------------------------
-    # Load model
-    # -----------------------------
-    model = joblib.load(f"model/{model_name}.pkl")
+        # Load model
+        model = joblib.load(f"model/{model_name}.pkl")
 
-    # -----------------------------
-    # Predict probabilities
-    # -----------------------------
-    if hasattr(model, "predict_proba"):
-        prob = model.predict_proba(X_processed)[:, 1]
-    else:
-        prob = [None] * len(data)
+        # Predict probabilities
+        if hasattr(model, "predict_proba"):
+            prob = model.predict_proba(X_processed)[:, 1]
+        else:
+            prob = [None] * len(data)
 
-    predictions = model.predict(X_processed)
+        predictions = model.predict(X_processed)
 
-    # -----------------------------
-    # Combine predictions & probability
-    # -----------------------------
-    results_df = pd.DataFrame({
-        "Prediction": predictions,
-        "Probability_Deposit_Yes": prob
-    })
+        # Combine predictions & probability
+        results_df = pd.DataFrame({
+            "Prediction": predictions,
+            "Probability_Deposit_Yes": prob
+        })
 
     # -----------------------------
     # Display table nicely
@@ -72,11 +68,9 @@ if uploaded_file:
             return ''
         
         if val <= 0.5:
-            # Red to Yellow
             red = 255
             green = int((val / 0.5) * 255)
         else:
-            # Yellow to Green
             red = int((1 - (val - 0.5)/0.5) * 255)
             green = 255
         return f'background-color: rgb({red}, {green}, 0); color: black; text-align: center'
